@@ -2,7 +2,7 @@
   "name": "Transaction Tracker",
   "short_name": "Tracker",
   "description": "A PWA to track deliveries, trading, and expenses.",
-  "start_url": "/index.html",
+  "start_url": "https://stormshaddow22.github.io/Transaction_Tracker/",
   "display": "standalone",
   "background_color": "#eef2f5",
   "theme_color": "#107c41",
