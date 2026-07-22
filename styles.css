@@ -319,3 +319,68 @@ button:hover {
 .btn-edit:hover { 
     background: #5a6268; 
 }
+
+@media print {
+    .top-left-bar,
+    .top-right-bar,
+    .settings-drawer,
+    .filter-section,
+    #loadReportBtn,
+    #downloadPdfBtn,
+    button {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        align-items: stretch !important;
+    }
+    .form-container {
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+/* Hide print header during normal web browsing */
+#printHeader {
+    display: none;
+}
+
+@media print {
+    .top-left-bar,
+    .top-right-bar,
+    .settings-drawer,
+    .filter-section,
+    #loadReportBtn,
+    #downloadPdfBtn,
+    button {
+        display: none !important;
+    }
+    
+    /* Force print header and logo to show in PDF */
+    #printHeader {
+        display: block !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        align-items: stretch !important;
+    }
+    
+    .form-container {
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    #reportResults {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+}

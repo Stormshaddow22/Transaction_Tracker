@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sales Stats - Transaction Tracker</title>
+    
+    <!-- PWA Manifest & iOS Support -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-status-bar" content="#107c41">
+    <meta name="theme-color" content="#107c41">
+
+    <!-- External Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        /* Print-specific rules to prevent title duplication */
+        @media print {
+            #mainTitle {
+                display: none !important;
+            }
+            #printHeader {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+<!-- Top Left Floating Bar: Logo (Leftmost) -->
+<div class="top-left-bar">
+    <div class="profile-container" id="profileContainer" title="Custom Logo / Profile Picture">
+        <span class="profile-placeholder" id="profileInitials">Me</span>
+        <img id="profileImg" src="" alt="Logo" class="hidden">
+    </div>
+</div>
+
+<!-- Top Right Floating Bar: Sandwich Menu (Rightmost) -->
+<div class="top-right-bar">
+    <div class="menu-icon" id="menuBtn" title="Settings Menu">☰</div>
+</div>
+
+<!-- Settings Drawer / Modal -->
+<div class="settings-drawer" id="settingsDrawer">
+    <div class="settings-content">
+        <h3>Settings <span class="close-settings" id="closeSettings">&times;</span></h3>
+
+        <div class="setting-item">
+            <span style="cursor: pointer; color: var(--primary-color); font-weight: bold">Dark Theme</span>
+            <label class="switch">
+                <input type="checkbox" id="darkThemeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <!-- Edit Profile Picture -->
+        <div class="setting-item">
+            <span style="cursor: pointer; color: var(--primary-color); font-weight: bold;" id="editLogoBtn">Edit Profile picture</span>
+            <input type="file" id="logoUpload" accept="image/*" class="hidden">
+        </div>
+        
+        <!-- Go back to Add an Entry -->
+        <div class="setting-item">
+            <span id="goHomeBtn" style="cursor: pointer; color: var(--primary-color); font-weight: bold">Add an entry</span>
+        </div>
+        
+        <!-- Connect to Google Sheets -->
+        <div class="setting-item connect-sheets">
+            <span id="connectSheetsBtn">Connect to Google Sheets</span>
+        </div>
+    </div>
+</div>
+
+<div class="form-container" style="max-width: 600px;">
+    
+    <!-- Printable Header (Logo aligned to the left, Centered Title & Date Range on PDF) -->
+    <div id="printHeader" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #107c41; padding-bottom: 10px;">
+        <img id="printProfileImg" src="" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #107c41; display: none;" />
+        <div style="flex-grow: 1; text-align: center;">
+            <h2 style="margin: 0; font-size: 20px; color: #107c41;">Sales Stats & Reports</h2>
+            <div id="printDateRange" style="font-size: 12px; color: #555; margin-top: 3px; font-weight: bold;"></div>
+        </div>
+        <div style="width: 45px;"></div> <!-- Spacer to balance layout -->
+    </div>
+
+    <!-- Main Screen Title -->
+    <h2 id="mainTitle" style="color: #107c41; text-align: center;">Sales Stats & Reports</h2>
+    
+    <!-- Date Filter Controls (Month & Year From / To) -->
+    <div class="filter-section" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label for="fromDate">From (Month/Year)</label>
+                <input type="month" id="fromDate">
+            </div>
+            <div style="flex: 1;">
+                <label for="toDate">To (Month/Year)</label>
+                <input type="month" id="toDate">
+            </div>
+        </div>
+        <button type="button" id="loadReportBtn">Show Report</button>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="statsSummary" class="hidden" style="margin-bottom: 20px;">
+        <!-- Top Row: Total In, Total Out, Net Balance -->
+        <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 100px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--input-border); text-align: center;">
+                <div style="font-size: 11px; font-weight: bold; color: var(--label-color);">Total In</div>
+                <div id="statTotalIn" style="font-size: 16px; font-weight: bold; color: #107c41; margin-top: 4px;">£0.00</div>
+            </div>
+            <div style="flex: 1; min-width: 100px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--input-border); text-align: center;">
+                <div style="font-size: 11px; font-weight: bold; color: var(--label-color);">Total Out</div>
+                <div id="statTotalOut" style="font-size: 16px; font-weight: bold; color: #d83b01; margin-top: 4px;">£0.00</div>
+            </div>
+            <div style="flex: 1; min-width: 100px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--input-border); text-align: center;">
+                <div style="font-size: 11px; font-weight: bold; color: var(--label-color);">Net Balance</div>
+                <div id="statNet" style="font-size: 16px; font-weight: bold; margin-top: 4px;">£0.00</div>
+            </div>
+        </div>
+
+        <!-- Separator -->
+        <hr style="border: none; border-top: 1px solid var(--input-border); margin: 15px 0;">
+
+        <!-- Single Unified Card Container for Category Breakdowns (Stacked in order) -->
+        <div style="background: var(--input-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--input-border);">
+            <div style="font-size: 12px; font-weight: bold; color: var(--label-color); margin-bottom: 12px; text-align: center;">Category Breakdown</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--input-border);">
+                    <span style="font-size: 11px; color: var(--label-color); font-weight: bold;">Delivery Earnings:</span>
+                    <span id="statDeliveryEarnings" style="font-size: 13px; font-weight: bold; color: #107c41;">£0.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--input-border);">
+                    <span style="font-size: 11px; color: var(--label-color); font-weight: bold;">Delivery Expense:</span>
+                    <span id="statDeliveryExpense" style="font-size: 13px; font-weight: bold; color: #d83b01;">£0.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--input-border);">
+                    <span style="font-size: 11px; color: var(--label-color); font-weight: bold;">Trading Earnings:</span>
+                    <span id="statTradingEarnings" style="font-size: 13px; font-weight: bold; color: #107c41;">£0.00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
+                    <span style="font-size: 11px; color: var(--label-color); font-weight: bold;">Re-stock Expense:</span>
+                    <span id="statRestockExpense" style="font-size: 13px; font-weight: bold; color: #d83b01;">£0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Report Results Table Container (Fully expanded, no inner scroll) -->
+    <div id="reportResults" style="overflow-x: auto;">
+        <p style="text-align: center; color: var(--label-color);">Select your date range and click "Show Report" to view data from Google Sheets.</p>
+    </div>
+    <br>
+    <!-- Download PDF Button -->
+    <button type="button" id="downloadPdfBtn" class="hidden" style="background: #0078d4; margin-bottom: 20px;">Download PDF Report</button>
+</div>
+
+<!-- Stats JavaScript Link -->
+<script src="stats.js"></script>
+</body>
+</html>

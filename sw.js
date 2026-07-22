@@ -2,8 +2,10 @@ const CACHE_NAME = 'tracker-pwa-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
+  '/stats.html',
   '/styles.css',
   '/script.js',
+  '/stats.js',
   '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png'

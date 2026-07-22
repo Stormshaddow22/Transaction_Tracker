@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileImg = document.getElementById('profileImg');
     const profileInitials = document.getElementById('profileInitials');
     const connectSheetsBtn = document.getElementById('connectSheetsBtn');
+    const goToStats = document.getElementById('goToStats');
 
     // Initialize Default Date
     document.getElementById('Date').valueAsDate = new Date();
@@ -59,6 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
     menuBtn.addEventListener('click', () => { settingsDrawer.style.display = 'flex'; });
     closeSettings.addEventListener('click', () => { settingsDrawer.style.display = 'none'; });
     window.addEventListener('click', (e) => { if (e.target === settingsDrawer) settingsDrawer.style.display = 'none'; });
+
+    // Navigate to Sales Stats page
+    if (goToStats) {
+        goToStats.addEventListener('click', () => {
+            window.location.href = 'stats.html';
+        });
+    }
 
     // Logo Upload Logic
     editLogoBtn.addEventListener('click', () => logoUpload.click());
@@ -239,13 +247,36 @@ document.addEventListener('DOMContentLoaded', () => {
         saveBtn.disabled = true;
         saveBtn.innerText = 'Saving...';
 
+        let platformVal = '';
+        let itemTypeVal = finalPlatformOrType;
+
+        if (mainCategory.value === 'Delivery') {
+            if (deliveryType.value === 'Food delivered') {
+                itemTypeVal = 'Food Delivery';
+                platformVal = foodPlatform.value;
+            } else {
+                itemTypeVal = deliveryType.value;
+                platformVal = '';
+            }
+        } else if (mainCategory.value === 'Trading') {
+            if (tradingType.value === 'Item sale') {
+                itemTypeVal = 'Item Sale';
+                platformVal = salePlatform.value;
+            } else {
+                itemTypeVal = 'Stock Purchase';
+                platformVal = '';
+            }
+        }
+
         const payload = {
             date: document.getElementById('sumDate').innerText,
-            category: document.getElementById('sumCategory').innerText,
+            platform: platformVal,
+            type: mainCategory.value,  // <--- Add this line here!
+            itemType: itemTypeVal,
             flow: document.getElementById('sumFlow').innerText,
             amount: document.getElementById('sumAmount').innerText,
             paymentMode: document.getElementById('sumPayment').innerText,
-            note: document.getElementById('sumNote').innerText
+            note: document.getElementById('sumNote').innerText === 'None' ? '' : document.getElementById('sumNote').innerText
         };
 
         fetch(sheetUrl, {
