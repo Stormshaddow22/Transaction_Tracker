@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigate to Sales Stats page
     if (goToStats) {
         goToStats.addEventListener('click', () => {
-            window.location.href = 'stats.html';
+            window.location.href = 'https://stormshaddow22.github.io/Transaction_Tracker/stats.html';
         });
     }
 
