@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ==========================================
+    // UNIFIED SETTINGS & NAVIGATION MODULE
+    // ==========================================
     const menuBtn = document.getElementById('menuBtn');
     const settingsDrawer = document.getElementById('settingsDrawer');
     const closeSettings = document.getElementById('closeSettings');
@@ -9,8 +12,113 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileInitials = document.getElementById('profileInitials');
     const printProfileImg = document.getElementById('printProfileImg');
     const connectSheetsBtn = document.getElementById('connectSheetsBtn');
-    const goHomeBtn = document.getElementById('goHomeBtn');
 
+    const goHomeBtn = document.getElementById('goHomeBtn') || document.getElementById('goToHome');
+    const goStatsBtn = document.getElementById('goStatsBtn') || document.getElementById('goToStats');
+    const goDashBtn = document.getElementById('goDashBtn') || document.getElementById('goToDash');
+
+    const savedLogo = localStorage.getItem('userLogo');
+    if (savedLogo) {
+        if (profileImg) {
+            profileImg.src = savedLogo;
+            profileImg.classList.remove('hidden');
+        }
+        if (profileInitials) profileInitials.classList.add('hidden');
+        if (printProfileImg) {
+            printProfileImg.src = savedLogo;
+            printProfileImg.style.display = 'inline-block';
+        }
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' && darkThemeToggle) {
+        document.body.setAttribute('data-theme', 'dark');
+        darkThemeToggle.checked = true;
+    }
+
+    if (menuBtn && settingsDrawer) {
+        menuBtn.addEventListener('click', () => { settingsDrawer.style.display = 'flex'; });
+    }
+    if (closeSettings && settingsDrawer) {
+        closeSettings.addEventListener('click', () => { settingsDrawer.style.display = 'none'; });
+    }
+    window.addEventListener('click', (e) => { 
+        if (settingsDrawer && e.target === settingsDrawer) settingsDrawer.style.display = 'none'; 
+    });
+
+    if (goHomeBtn) {
+        goHomeBtn.addEventListener('click', () => {
+            if (settingsDrawer) settingsDrawer.style.display = 'none';
+            window.location.href = 'index.html';
+        });
+    }
+    if (goStatsBtn) {
+        goStatsBtn.addEventListener('click', () => {
+            if (settingsDrawer) settingsDrawer.style.display = 'none';
+            window.location.href = 'stats.html';
+        });
+    }
+    if (goDashBtn) {
+        goDashBtn.addEventListener('click', () => {
+            if (settingsDrawer) settingsDrawer.style.display = 'none';
+            window.location.href = 'dash.html';
+        });
+    }
+
+    if (editLogoBtn && logoUpload) {
+        editLogoBtn.addEventListener('click', () => logoUpload.click());
+        logoUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result;
+                    if (profileImg) {
+                        profileImg.src = base64Image;
+                        profileImg.classList.remove('hidden');
+                    }
+                    if (profileInitials) profileInitials.classList.add('hidden');
+                    if (printProfileImg) {
+                        printProfileImg.src = base64Image;
+                        printProfileImg.style.display = 'inline-block';
+                    }
+                    localStorage.setItem('userLogo', base64Image);
+                    if (settingsDrawer) settingsDrawer.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    if (darkThemeToggle) {
+        darkThemeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
+    if (connectSheetsBtn) {
+        connectSheetsBtn.addEventListener('click', () => {
+            const currentUrl = localStorage.getItem('googleSheetsUrl') || '';
+            const userUrl = prompt("Paste your Google Apps Script Web App URL here:", currentUrl);
+            
+            if (userUrl !== null && userUrl.trim() !== "") {
+                localStorage.setItem('googleSheetsUrl', userUrl.trim());
+                alert("Google Sheets connection saved!");
+            } else if (userUrl !== null && userUrl.trim() === "") {
+                localStorage.removeItem('googleSheetsUrl');
+                alert("Connection URL cleared.");
+            }
+        });
+    }
+    // ==========================================
+
+    // Report / Stats Logic
     const loadReportBtn = document.getElementById('loadReportBtn');
     const downloadPdfBtn = document.getElementById('downloadPdfBtn');
     const fromDateInput = document.getElementById('fromDate');
@@ -31,156 +139,66 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
     const currentMonthVal = `${currentYear}-${currentMonth}`;
     
-    fromDateInput.value = currentMonthVal;
-    toDateInput.value = currentMonthVal;
+    if (fromDateInput) fromDateInput.value = currentMonthVal;
+    if (toDateInput) toDateInput.value = currentMonthVal;
 
-    const savedLogo = localStorage.getItem('userLogo');
-    if (savedLogo) {
-        profileImg.src = savedLogo;
-        profileImg.classList.remove('hidden');
-        profileInitials.classList.add('hidden');
-
-        printProfileImg.src = savedLogo;
-        printProfileImg.style.display = 'inline-block';
-    }
-
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
-        darkThemeToggle.checked = true;
-    }
-
-    menuBtn.addEventListener('click', () => { settingsDrawer.style.display = 'flex'; });
-    closeSettings.addEventListener('click', () => { settingsDrawer.style.display = 'none'; });
-    window.addEventListener('click', (e) => { if (e.target === settingsDrawer) settingsDrawer.style.display = 'none'; });
-
-    goHomeBtn.addEventListener('click', () => {
-        window.location.href = 'index.html';
-    });
-
-    editLogoBtn.addEventListener('click', () => logoUpload.click());
-    logoUpload.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64Image = e.target.result;
-                profileImg.src = base64Image;
-                profileImg.classList.remove('hidden');
-                profileInitials.classList.add('hidden');
-
-                printProfileImg.src = base64Image;
-                printProfileImg.style.display = 'inline-block';
-
-                localStorage.setItem('userLogo', base64Image);
-                settingsDrawer.style.display = 'none';
+    if (loadReportBtn) {
+        loadReportBtn.addEventListener('click', async () => {
+            const sheetUrl = localStorage.getItem('googleSheetsUrl');
+            if (!sheetUrl) {
+                alert('Please connect to Google Sheets in the Settings menu first!');
+                return;
             }
-            reader.readAsDataURL(file);
-        }
-    });
 
-    darkThemeToggle.addEventListener('change', function() {
-        if (this.checked) {
-            document.body.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.body.setAttribute('data-theme', 'light');
-            localStorage.setItem('theme', 'light');
-        }
-    });
+            const fromVal = fromDateInput ? fromDateInput.value : ''; 
+            const toVal = toDateInput ? toDateInput.value : '';     
 
-    connectSheetsBtn.addEventListener('click', () => {
-        const currentUrl = localStorage.getItem('googleSheetsUrl') || '';
-        const userUrl = prompt("Paste your Google Apps Script Web App URL here:", currentUrl);
-        
-        if (userUrl !== null && userUrl.trim() !== "") {
-            localStorage.setItem('googleSheetsUrl', userUrl.trim());
-            alert("Google Sheets connection saved!");
-        } else if (userUrl !== null && userUrl.trim() === "") {
-            localStorage.removeItem('googleSheetsUrl');
-            alert("Connection URL cleared.");
-        }
-    });
+            loadReportBtn.disabled = true;
+            loadReportBtn.innerText = 'Loading Report...';
+            if (reportResults) reportResults.innerHTML = '<p style="text-align: center; color: var(--label-color);">Fetching data from Google Sheets...</p>';
 
-    loadReportBtn.addEventListener('click', async () => {
-        const sheetUrl = localStorage.getItem('googleSheetsUrl');
-        if (!sheetUrl) {
-            alert('Please connect to Google Sheets in the Settings menu first!');
-            return;
-        }
+            try {
+                const response = await fetch(sheetUrl);
+                const result = await response.json();
 
-        const fromVal = fromDateInput.value; 
-        const toVal = toDateInput.value;     
+                if (result.result === 'success') {
+                    let transactions = result.data || [];
 
-        loadReportBtn.disabled = true;
-        loadReportBtn.innerText = 'Loading Report...';
-        reportResults.innerHTML = '<p style="text-align: center; color: var(--label-color);">Fetching data from Google Sheets...</p>';
+                    if (fromVal || toVal) {
+                        transactions = transactions.filter(tx => {
+                            if (!tx.yearMonth) return false;
+                            if (fromVal && tx.yearMonth < fromVal) return false;
+                            if (toVal && tx.yearMonth > toVal) return false;
+                            return true;
+                        });
+                    }
 
-        try {
-            const response = await fetch(sheetUrl);
-            const result = await response.json();
-
-            if (result.result === 'success') {
-                let transactions = result.data || [];
-
-                if (fromVal || toVal) {
-                    transactions = transactions.filter(tx => {
-                        if (!tx.yearMonth) return false;
-                        if (fromVal && tx.yearMonth < fromVal) return false;
-                        if (toVal && tx.yearMonth > toVal) return false;
-                        return true;
-                    });
+                    renderReport(transactions);
+                } else {
+                    if (reportResults) reportResults.innerHTML = `<p style="text-align: center; color: var(--error-border);">Error: ${result.error || 'Unknown error'}</p>`;
                 }
-
-                renderReport(transactions);
-            } else {
-                reportResults.innerHTML = `<p style="text-align: center; color: var(--error-border);">Error: ${result.error || 'Unknown error'}</p>`;
+            } catch (err) {
+                console.error('Fetch Error:', err);
+                if (reportResults) reportResults.innerHTML = `<p style="text-align: center; color: var(--error-border);">Network error or invalid Web App URL response.</p>`;
+            } finally {
+                loadReportBtn.disabled = false;
+                loadReportBtn.innerText = 'Show Report';
             }
-        } catch (err) {
-            console.error('Fetch Error:', err);
-            reportResults.innerHTML = `<p style="text-align: center; color: var(--error-border);">Network error or invalid Web App URL response.</p>`;
-        } finally {
-            loadReportBtn.disabled = false;
-            loadReportBtn.innerText = 'Show Report';
-        }
-    });
+        });
+    }
 
-    downloadPdfBtn.addEventListener('click', () => {
-        window.print();
-    });
+    if (downloadPdfBtn) {
+        downloadPdfBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
 
     function renderReport(transactions) {
         if (transactions.length === 0) {
-            statsSummary.classList.add('hidden');
-            downloadPdfBtn.classList.add('hidden');
-            reportResults.innerHTML = '<p style="text-align: center; color: var(--label-color);">No transactions found for the selected date range.</p>';
+            if (statsSummary) statsSummary.classList.add('hidden');
+            if (downloadPdfBtn) downloadPdfBtn.classList.add('hidden');
+            if (reportResults) reportResults.innerHTML = '<p style="text-align: center; color: var(--label-color);">No transactions found for the selected date range.</p>';
             return;
-        }
-
-        const fromVal = fromDateInput.value;
-        const toVal = toDateInput.value;
-
-        // Render formatted date range (e.g. Jan 2026 - Feb 2027) in PDF header
-        const printDateRange = document.getElementById('printDateRange');
-        if (printDateRange) {
-            const formatMonth = (val) => {
-                if (!val) return '';
-                const [y, m] = val.split('-');
-                const d = new Date(y, m - 1, 1);
-                return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-            };
-            const formattedFrom = formatMonth(fromVal);
-            const formattedTo = formatMonth(toVal);
-
-            if (formattedFrom && formattedTo) {
-                printDateRange.textContent = `${formattedFrom} - ${formattedTo}`;
-            } else if (formattedFrom) {
-                printDateRange.textContent = `From ${formattedFrom}`;
-            } else if (formattedTo) {
-                printDateRange.textContent = `Up to ${formattedTo}`;
-            } else {
-                printDateRange.textContent = '';
-            }
         }
 
         let deliveryEarnings = 0;
@@ -206,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const absAmount = Math.abs(cleanAmount);
             const flowVal = String(tx.flow || '').toLowerCase();
             const typeVal = String(tx.type || tx.category || '').toLowerCase();
-            const cleanDate = tx.date ? tx.date.split('T')[0] : '';
 
             if (typeVal.includes('delivery')) {
                 if (flowVal.includes('in')) {
@@ -232,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             html += `
                 <tr style="border-bottom: 1px solid var(--input-border);">
-                    <td style="padding: 8px;">${cleanDate}</td>
+                    <td style="padding: 8px;">${tx.date ? tx.date.split('T')[0] : ''}</td>
                     <td style="padding: 8px;">${tx.category || ''}</td>
                     <td style="padding: 8px; color: ${flowVal.includes('out') ? '#d83b01' : '#107c41'}; font-weight: bold;">${tx.flow || ''}</td>
                     <td style="padding: 8px; text-align: right; font-weight: bold;">${tx.amount || ''}</td>
@@ -246,18 +263,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalOut = deliveryExpense + restockExpense;
         const netBalance = totalIn - totalOut;
 
-        statTotalIn.textContent = `£${totalIn.toFixed(2)}`;
-        statTotalOut.textContent = `£${totalOut.toFixed(2)}`;
-        statNet.textContent = `£${netBalance.toFixed(2)}`;
-        statNet.style.color = netBalance >= 0 ? '#107c41' : '#d83b01';
+        if (statTotalIn) statTotalIn.textContent = `£${totalIn.toFixed(2)}`;
+        if (statTotalOut) statTotalOut.textContent = `£${totalOut.toFixed(2)}`;
+        if (statNet) {
+            statNet.textContent = `£${netBalance.toFixed(2)}`;
+            statNet.style.color = netBalance >= 0 ? '#107c41' : '#d83b01';
+        }
 
-        statDeliveryEarnings.textContent = `£${deliveryEarnings.toFixed(2)}`;
-        statDeliveryExpense.textContent = `£${deliveryExpense.toFixed(2)}`;
-        statTradingEarnings.textContent = `£${tradingEarnings.toFixed(2)}`;
-        statRestockExpense.textContent = `£${restockExpense.toFixed(2)}`;
+        if (statDeliveryEarnings) statDeliveryEarnings.textContent = `£${deliveryEarnings.toFixed(2)}`;
+        if (statDeliveryExpense) statDeliveryExpense.textContent = `£${deliveryExpense.toFixed(2)}`;
+        if (statTradingEarnings) statTradingEarnings.textContent = `£${tradingEarnings.toFixed(2)}`;
+        if (statRestockExpense) statRestockExpense.textContent = `£${restockExpense.toFixed(2)}`;
 
-        statsSummary.classList.remove('hidden');
-        downloadPdfBtn.classList.remove('hidden');
-        reportResults.innerHTML = html;
+        if (statsSummary) statsSummary.classList.remove('hidden');
+        if (downloadPdfBtn) downloadPdfBtn.classList.remove('hidden');
+        if (reportResults) reportResults.innerHTML = html;
     }
 });

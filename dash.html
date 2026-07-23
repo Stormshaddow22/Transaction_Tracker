@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard - Transaction Tracker</title>
+    
+    <!-- PWA Manifest & iOS Support -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-status-bar" content="#107c41">
+    <meta name="theme-color" content="#107c41">
+
+    <!-- External Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        /* Toggle Switch Styles */
+        .switch-container {
+            display: flex;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .switch-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            color: var(--label-color);
+            background: transparent;
+            border: none;
+        }
+        .switch-btn.active {
+            background: #107c41;
+            color: #ffffff;
+        }
+        
+        /* Side-by-side Cards Container */
+        .side-by-side {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .side-card {
+            flex: 1;
+            min-width: 105px;
+            background: var(--input-bg);
+            padding: 12px 8px;
+            border-radius: 8px;
+            border: 1px solid var(--input-border);
+            text-align: center;
+        }
+        .side-card-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--label-color);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .side-card-val {
+            font-size: 14px;
+            font-weight: bold;
+            color: #107c41;
+            margin-top: 2px;
+        }
+
+        /* Chart & Ledger Container Styles */
+        .chart-box {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--label-color);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+<!-- Top Left Floating Bar: Logo (Leftmost) -->
+<div class="top-left-bar">
+    <div class="profile-container" id="profileContainer" title="Custom Logo / Profile Picture">
+        <span class="profile-placeholder" id="profileInitials">Me</span>
+        <img id="profileImg" src="" alt="Logo" class="hidden">
+    </div>
+</div>
+
+<!-- Top Right Floating Bar: Sandwich Menu (Rightmost) -->
+<div class="top-right-bar">
+    <div class="menu-icon" id="menuBtn" title="Settings Menu">☰</div>
+</div>
+
+
+       
+
+<div class="form-container" style="max-width: 650px;">
+    
+    <h2 id="mainTitle" style="color: #107c41; text-align: center; margin-bottom: 15px;">Analytics Dashboard</h2>
+    
+    <!-- Date Filter Controls -->
+    <div class="filter-section" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label for="fromDate">From (Month/Year)</label>
+                <input type="month" id="fromDate">
+            </div>
+            <div style="flex: 1;">
+                <label for="toDate">To (Month/Year)</label>
+                <input type="month" id="toDate">
+            </div>
+        </div>
+        <button type="button" id="loadDashBtn">Load Dashboard</button>
+    </div>
+
+    <!-- Toggle Switch: Trading | Deliveries -->
+    <div class="switch-container">
+        <button type="button" class="switch-btn active" id="btnTrading">Trading</button>
+        <button type="button" class="switch-btn" id="btnDeliveries">Deliveries</button>
+    </div>
+
+    <!-- Dashboard Content Area (Populated dynamically via JS) -->
+    <div id="dashContent" class="hidden">
+        
+        <!-- Section 1: Main Bar Chart Container -->
+        <div class="chart-box">
+            <div class="chart-title" id="mainChartTitle">Trading Overview</div>
+            <div id="mainBarChart" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <!-- Section 2: Three Side-by-Side Containers -->
+        <div id="sideContainers" class="side-by-side"></div>
+
+        <!-- Section 3: Time-Series Ledger Graph -->
+        <div class="chart-box">
+            <div class="chart-title" id="timeChartTitle">Weekly Performance Breakdown</div>
+            <div style="font-size: 11px; color: var(--label-color); text-align: center; margin-bottom: 8px;" id="timeGroupingLabel"></div>
+            <div id="timeSeriesGraph" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+
+    </div>
+
+    <!-- Initial placeholder state before loading -->
+    <div id="dashPlaceholder" style="text-align: center; padding: 30px; color: var(--label-color);">
+        Select your date range and click "Load Dashboard" to view analytics.
+    </div>
+
+</div>
+
+<!-- Dashboard JavaScript Link -->
+<script src="settings.js" defer></script>
+<script src="dash.js" defer></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dynamic Transaction Tracker</title>
+    <title>Transaction Tracker</title>
     
     <!-- PWA Manifest & iOS Support -->
     <link rel="manifest" href="manifest.json">
@@ -29,39 +29,8 @@
     <div class="menu-icon" id="menuBtn" title="Settings Menu">☰</div>
    </div>
 
-<!-- Settings Drawer / Modal -->
-<div class="settings-drawer" id="settingsDrawer">
-    <div class="settings-content">
-        <h3>Settings <span class="close-settings" id="closeSettings">&times;</span></h3>
-
-        <div class="setting-item">
-            <span style="cursor: pointer; color: var(--primary-color); font-weight: bold">Dark Theme</span>
-            <label class="switch">
-                <input type="checkbox" id="darkThemeToggle">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <!-- Option 2: Edit profile picture -->
-        <div class="setting-item">
-            <span style="cursor: pointer; color: var(--primary-color); font-weight: bold;" id="editLogoBtn">Edit Profile picture</span>
-            <input type="file" id="logoUpload" accept="image/*" class="hidden">
-        </div>
-        
-        <!-- Option 3: sales stats -->
-<div class="setting-item">
-    <span id="goToStats" style="cursor: pointer; color: var(--primary-color); font-weight: bold">Sales stats</span>
-</div>
-        
-        <!-- Option 4: Connect to Google Sheets -->
-        <div class="setting-item connect-sheets">
-            <span id="connectSheetsBtn">Connect to Google Sheets</span>
-                </div>
-    </div>
-</div>
-
 <div class="form-container">
-    <h2>Transaction Tracker</h2>
+    <h2>Add Transaction</h2>
     <form id="trackerForm">
         
         <!-- Date -->
@@ -173,7 +142,8 @@
 </div>
 
 <!-- External JavaScript Link -->
-<script src="script.js"></script>
+<script src="settings.js" defer></script>
+<script src="script.js" defer></script>
 
 <!-- PWA Service Worker Registration -->
 <script>

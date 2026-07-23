@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sales Stats - Transaction Tracker</title>
+    <title>Sales Statment</title>
     
     <!-- PWA Manifest & iOS Support -->
     <link rel="manifest" href="manifest.json">
@@ -15,13 +15,26 @@
     <link rel="stylesheet" href="styles.css">
 
     <style>
-        /* Print-specific rules to prevent title duplication */
+        /* Define physical page margins for the PDF generator */
+        @page {
+            size: auto;
+            margin: 15mm;
+        }
+
+        /* Print-specific rules */
         @media print {
             #mainTitle {
                 display: none !important;
             }
             #printHeader {
                 display: flex !important;
+            }
+            .form-container {
+                padding: 10px 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: none !important;
             }
         }
     </style>
@@ -41,51 +54,20 @@
     <div class="menu-icon" id="menuBtn" title="Settings Menu">☰</div>
 </div>
 
-<!-- Settings Drawer / Modal -->
-<div class="settings-drawer" id="settingsDrawer">
-    <div class="settings-content">
-        <h3>Settings <span class="close-settings" id="closeSettings">&times;</span></h3>
-
-        <div class="setting-item">
-            <span style="cursor: pointer; color: var(--primary-color); font-weight: bold">Dark Theme</span>
-            <label class="switch">
-                <input type="checkbox" id="darkThemeToggle">
-                <span class="slider"></span>
-            </label>
-        </div>
-        
-        <!-- Edit Profile Picture -->
-        <div class="setting-item">
-            <span style="cursor: pointer; color: var(--primary-color); font-weight: bold;" id="editLogoBtn">Edit Profile picture</span>
-            <input type="file" id="logoUpload" accept="image/*" class="hidden">
-        </div>
-        
-        <!-- Go back to Add an Entry -->
-        <div class="setting-item">
-            <span id="goHomeBtn" style="cursor: pointer; color: var(--primary-color); font-weight: bold">Add an entry</span>
-        </div>
-        
-        <!-- Connect to Google Sheets -->
-        <div class="setting-item connect-sheets">
-            <span id="connectSheetsBtn">Connect to Google Sheets</span>
-        </div>
-    </div>
-</div>
-
 <div class="form-container" style="max-width: 600px;">
     
     <!-- Printable Header (Logo aligned to the left, Centered Title & Date Range on PDF) -->
     <div id="printHeader" style="display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #107c41; padding-bottom: 10px;">
-        <img id="printProfileImg" src="" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #107c41; display: none;" />
+        <img id="printProfileImg" src="" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #107c41; display: none;" />
         <div style="flex-grow: 1; text-align: center;">
-            <h2 style="margin: 0; font-size: 20px; color: #107c41;">Sales Stats & Reports</h2>
+            <h2 style="margin: 0; font-size: 20px; color: #107c41;">Sales statement</h2>
             <div id="printDateRange" style="font-size: 12px; color: #555; margin-top: 3px; font-weight: bold;"></div>
         </div>
-        <div style="width: 45px;"></div> <!-- Spacer to balance layout -->
+        <div style="width: 70px;"></div> <!-- Spacer to balance layout -->
     </div>
 
     <!-- Main Screen Title -->
-    <h2 id="mainTitle" style="color: #107c41; text-align: center;">Sales Stats & Reports</h2>
+    <h2 id="mainTitle" style="color: #107c41; text-align: center;">Sales statement</h2>
     
     <!-- Date Filter Controls (Month & Year From / To) -->
     <div class="filter-section" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px;">
@@ -147,7 +129,6 @@
         </div>
     </div>
 
-
     <!-- Report Results Table Container (Fully expanded, no inner scroll) -->
     <div id="reportResults" style="overflow-x: auto;">
         <p style="text-align: center; color: var(--label-color);">Select your date range and click "Show Report" to view data from Google Sheets.</p>
@@ -158,6 +139,7 @@
 </div>
 
 <!-- Stats JavaScript Link -->
-<script src="stats.js"></script>
+<script src="settings.js" defer></script>
+<script src="stats.js" defer></script>
 </body>
 </html>
