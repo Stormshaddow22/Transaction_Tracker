@@ -231,9 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTradingView(txs, fromVal, toVal) {
         let stats = {
-            vinted: { count: 0, value: 0 },
-            ebay: { count: 0, value: 0 },
-            facebook: { count: 0, value: 0 }
+            vinted: { name: 'Vinted', count: 0, value: 0 },
+            ebay: { name: 'eBay', count: 0, value: 0 },
+            facebook: { name: 'Facebook', count: 0, value: 0 }
         };
 
         txs.forEach(tx => {
@@ -242,8 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const amt = Math.abs(parseFloat(String(tx.amount || '').replace('£', '').replace(',', '')) || 0);
 
             if (flow.includes('in') && (cat.includes('trading') || cat.includes('sale') || cat.includes('vinted') || cat.includes('ebay') || cat.includes('facebook'))) {
-                if (cat.includes('vinted')) { stats.vinted.count++; stats.vinted.value += amt; }
-                else if (cat.includes('ebay')) { stats.ebay.count++; stats.ebay.value += amt; }
+                if (cat.includes('ebay')) { stats.ebay.count++; stats.ebay.value += amt; }
                 else if (cat.includes('facebook') || cat.includes('fb')) { stats.facebook.count++; stats.facebook.value += amt; }
                 else {
                     stats.vinted.count++; stats.vinted.value += amt;
@@ -251,24 +250,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const totalCount = stats.vinted.count + stats.ebay.count + stats.facebook.count;
-        const totalValue = stats.vinted.value + stats.ebay.value + stats.facebook.value;
+        const activeItems = Object.keys(stats).filter(key => stats[key].count > 0 || stats[key].value > 0);
+
+        if (activeItems.length === 0) {
+            if (dashPlaceholder) {
+                dashPlaceholder.style.display = 'block';
+                dashPlaceholder.textContent = 'No trading data found for this period.';
+            }
+            if (dashContent) dashContent.classList.add('hidden');
+            return;
+        }
+
+        const totalCount = activeItems.reduce((sum, k) => sum + stats[k].count, 0);
+        const totalValue = activeItems.reduce((sum, k) => sum + stats[k].value, 0);
 
         if (mainChartTitle) {
             mainChartTitle.innerHTML = `
-                Trading Sales Value & Count (Vinted, eBay, Facebook)<br>
+                Trading Sales Value & Count<br>
                 <span style="font-size: 11px; font-weight: normal; color: var(--label-color);">Total Items Sold: <strong>${totalCount}</strong> | Total Sales Value: <strong style="color: #107c41;">£${totalValue.toFixed(2)}</strong></span>
             `;
         }
 
-        const maxVal = Math.max(stats.vinted.value, stats.ebay.value, stats.facebook.value, stats.vinted.count, stats.ebay.count, stats.facebook.count, 1);
-        
-        const vValH = (stats.vinted.value / maxVal) * 130;
-        const vCntH = (stats.vinted.count / maxVal) * 130;
-        const eValH = (stats.ebay.value / maxVal) * 130;
-        const eCntH = (stats.ebay.count / maxVal) * 130;
-        const fValH = (stats.facebook.value / maxVal) * 130;
-        const fCntH = (stats.facebook.count / maxVal) * 130;
+        const maxVal = Math.max(...activeItems.map(k => Math.max(stats[k].value, stats[k].count)), 1);
+        const slotWidth = 340 / activeItems.length;
+
+        let barsSvg = '';
+        let sideCardsHtml = '';
+
+        activeItems.forEach((key, index) => {
+            const item = stats[key];
+            const slotCenter = 40 + (index * slotWidth) + (slotWidth / 2);
+            const valH = (item.value / maxVal) * 130;
+            const cntH = (item.count / maxVal) * 130;
+            const xVal = slotCenter - 23;
+            const xCnt = slotCenter + 1;
+
+            barsSvg += `
+                <rect x="${xVal}" y="${160 - valH}" width="22" height="${valH}" fill="#f7931e" stroke="#000" stroke-width="1.5" />
+                ${item.value > 0 ? `<text x="${xVal + 11}" y="${Math.max(18, 160 - valH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${item.value.toFixed(0)}</text>` : ''}
+                <rect x="${xCnt}" y="${160 - cntH}" width="22" height="${cntH}" fill="#8b5cf6" stroke="#000" stroke-width="1.5" />
+                ${item.count > 0 ? `<text x="${xCnt + 11}" y="${Math.max(18, 160 - cntH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.count}</text>` : ''}
+                <text x="${slotCenter}" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.name}</text>
+            `;
+
+            sideCardsHtml += `
+                <div class="side-card">
+                    <div class="side-card-title">${item.name}</div>
+                    <div style="font-size: 11px; color: var(--label-color);">Sold: ${item.count}</div>
+                    <div class="side-card-val">£${item.value.toFixed(2)}</div>
+                </div>
+            `;
+        });
 
         if (mainBarChart) {
             mainBarChart.innerHTML = `
@@ -281,61 +313,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     <line x1="40" y1="60" x2="380" y2="60" stroke="#ccc" stroke-dasharray="3,3" />
                     <line x1="40" y1="100" x2="380" y2="100" stroke="#ccc" stroke-dasharray="3,3" />
                     <line x1="40" y1="140" x2="380" y2="140" stroke="#ccc" stroke-dasharray="3,3" />
-
                     <line x1="40" y1="160" x2="390" y2="160" stroke="#000" stroke-width="2" />
                     <line x1="40" y1="10" x2="40" y2="160" stroke="#000" stroke-width="2" />
-
-                    <rect x="65" y="${160 - vValH}" width="22" height="${vValH}" fill="#f7931e" stroke="#000" stroke-width="1.5" />
-                    ${stats.vinted.value > 0 ? `<text x="76" y="${Math.max(18, 160 - vValH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${stats.vinted.value.toFixed(0)}</text>` : ''}
-                    <rect x="90" y="${160 - vCntH}" width="22" height="${vCntH}" fill="#8b5cf6" stroke="#000" stroke-width="1.5" />
-                    ${stats.vinted.count > 0 ? `<text x="101" y="${Math.max(18, 160 - vCntH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${stats.vinted.count}</text>` : ''}
-                    <text x="88" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">Vinted</text>
-
-                    <rect x="175" y="${160 - eValH}" width="22" height="${eValH}" fill="#f7931e" stroke="#000" stroke-width="1.5" />
-                    ${stats.ebay.value > 0 ? `<text x="186" y="${Math.max(18, 160 - eValH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${stats.ebay.value.toFixed(0)}</text>` : ''}
-                    <rect x="200" y="${160 - eCntH}" width="22" height="${eCntH}" fill="#8b5cf6" stroke="#000" stroke-width="1.5" />
-                    ${stats.ebay.count > 0 ? `<text x="211" y="${Math.max(18, 160 - eCntH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${stats.ebay.count}</text>` : ''}
-                    <text x="198" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">eBay</text>
-
-                    <rect x="285" y="${160 - fValH}" width="22" height="${fValH}" fill="#f7931e" stroke="#000" stroke-width="1.5" />
-                    ${stats.facebook.value > 0 ? `<text x="296" y="${Math.max(18, 160 - fValH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${stats.facebook.value.toFixed(0)}</text>` : ''}
-                    <rect x="310" y="${160 - fCntH}" width="22" height="${fCntH}" fill="#8b5cf6" stroke="#000" stroke-width="1.5" />
-                    ${stats.facebook.count > 0 ? `<text x="321" y="${Math.max(18, 160 - fCntH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${stats.facebook.count}</text>` : ''}
-                    <text x="308" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">Facebook</text>
+                    ${barsSvg}
                 </svg>
             `;
         }
 
-        if (sideContainers) {
-            sideContainers.innerHTML = `
-                <div class="side-card">
-                    <div class="side-card-title">Vinted</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Sold: ${stats.vinted.count}</div>
-                    <div class="side-card-val">£${stats.vinted.value.toFixed(2)}</div>
-                </div>
-                <div class="side-card">
-                    <div class="side-card-title">eBay</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Sold: ${stats.ebay.count}</div>
-                    <div class="side-card-val">£${stats.ebay.value.toFixed(2)}</div>
-                </div>
-                <div class="side-card">
-                    <div class="side-card-title">Facebook</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Sold: ${stats.facebook.count}</div>
-                    <div class="side-card-val">£${stats.facebook.value.toFixed(2)}</div>
-                </div>
-            `;
-        }
+        if (sideContainers) sideContainers.innerHTML = sideCardsHtml;
 
         renderTimeSeriesGraph(txs, fromVal, toVal, ['vinted', 'ebay', 'facebook'], 'sales');
     }
 
     function renderDeliveriesView(txs, fromVal, toVal) {
-        if (mainChartTitle) mainChartTitle.textContent = 'Deliveries: Count, Earnings & Expense';
+        if (mainChartTitle) mainChartTitle.textContent = 'Deliveries: Earnings & Expenses';
 
         let stats = {
-            uber: { count: 0, earned: 0, expense: 0 },
-            justeat: { count: 0, earned: 0, expense: 0 },
-            amazon: { count: 0, earned: 0, expense: 0 }
+            uber: { name: 'Uber', count: 0, earned: 0 },
+            justeat: { name: 'Just Eat', count: 0, earned: 0 },
+            amazon: { name: 'Amazon', count: 0, earned: 0 },
+            expense: { name: 'Expense', count: 0, expense: 0 }
         };
 
         txs.forEach(tx => {
@@ -343,33 +340,89 @@ document.addEventListener('DOMContentLoaded', () => {
             const flow = String(tx.flow || '').toLowerCase();
             const amt = Math.abs(parseFloat(String(tx.amount || '').replace('£', '').replace(',', '')) || 0);
 
-            if (cat.includes('delivery') || cat.includes('uber') || cat.includes('just eat') || cat.includes('amazon')) {
-                let platform = 'uber';
-                if (cat.includes('just eat') || cat.includes('justeat')) platform = 'justeat';
-                else if (cat.includes('amazon')) platform = 'amazon';
-
-                if (flow.includes('in')) {
-                    stats[platform].count++;
-                    stats[platform].earned += amt;
+            if (flow.includes('in')) {
+                if (cat.includes('just eat') || cat.includes('justeat')) {
+                    stats.justeat.count++;
+                    stats.justeat.earned += amt;
+                } else if (cat.includes('amazon')) {
+                    stats.amazon.count++;
+                    stats.amazon.earned += amt;
                 } else {
-                    stats[platform].expense += amt;
+                    stats.uber.count++;
+                    stats.uber.earned += amt;
                 }
+            } else {
+                stats.expense.expense += amt;
+                stats.expense.count++;
             }
         });
 
-        const maxVal = Math.max(stats.uber.earned, stats.justeat.earned, stats.amazon.earned, stats.uber.expense, stats.justeat.expense, stats.amazon.expense, 1);
-        
-        const uEarnH = (stats.uber.earned / maxVal) * 130;
-        const uExpH = (stats.uber.expense / maxVal) * 130;
-        const jEarnH = (stats.justeat.earned / maxVal) * 130;
-        const jExpH = (stats.justeat.expense / maxVal) * 130;
-        const aEarnH = (stats.amazon.earned / maxVal) * 130;
-        const aExpH = (stats.amazon.expense / maxVal) * 130;
+        const activeItems = Object.keys(stats).filter(key => stats[key].count > 0 || stats[key].earned > 0 || stats[key].expense > 0);
+
+        if (activeItems.length === 0) {
+            if (dashPlaceholder) {
+                dashPlaceholder.style.display = 'block';
+                dashPlaceholder.textContent = 'No delivery data found for this period.';
+            }
+            if (dashContent) dashContent.classList.add('hidden');
+            return;
+        }
+
+        const maxVal = Math.max(...activeItems.map(k => {
+            if (k === 'expense') return stats[k].expense;
+            return Math.max(stats[k].earned, stats[k].count);
+        }), 1);
+
+        const slotWidth = 340 / activeItems.length;
+
+        let barsSvg = '';
+        let sideCardsHtml = '';
+
+        activeItems.forEach((key, index) => {
+            const item = stats[key];
+            const slotCenter = 40 + (index * slotWidth) + (slotWidth / 2);
+
+            if (key === 'expense') {
+                const barH = (item.expense / maxVal) * 130;
+                const xPos = slotCenter - 11;
+                barsSvg += `
+                    ${item.expense > 0 ? `
+                        <rect x="${xPos}" y="${160 - barH}" width="22" height="${barH}" fill="#d83b01" stroke="#000" stroke-width="1.5" />
+                        <text x="${xPos + 11}" y="${Math.max(18, 160 - barH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${item.expense.toFixed(0)}</text>
+                    ` : ''}
+                    <text x="${slotCenter}" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.name}</text>
+                `;
+            } else {
+                const earnedH = (item.earned / maxVal) * 130;
+                const countH = (item.count / maxVal) * 130;
+                const xEarned = slotCenter - 23;
+                const xCount = slotCenter + 1;
+
+                barsSvg += `
+                    <rect x="${xEarned}" y="${160 - earnedH}" width="22" height="${earnedH}" fill="#107c41" stroke="#000" stroke-width="1.5" />
+                    ${item.earned > 0 ? `<text x="${xEarned + 11}" y="${Math.max(18, 160 - earnedH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${item.earned.toFixed(0)}</text>` : ''}
+                    
+                    <rect x="${xCount}" y="${160 - countH}" width="22" height="${countH}" fill="#0078d4" stroke="#000" stroke-width="1.5" />
+                    ${item.count > 0 ? `<text x="${xCount + 11}" y="${Math.max(18, 160 - countH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.count}</text>` : ''}
+                    
+                    <text x="${slotCenter}" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.name}</text>
+                `;
+            }
+
+            sideCardsHtml += `
+                <div class="side-card">
+                    <div class="side-card-title">${item.name}</div>
+                    <div style="font-size: 11px; color: var(--label-color);">${key === 'expense' ? 'Total Expenses' : 'Count: ' + item.count}</div>
+                    <div class="side-card-val" style="color: ${key === 'expense' ? '#d83b01' : '#107c41'};">£${key === 'expense' ? item.expense.toFixed(2) : item.earned.toFixed(2)}</div>
+                </div>
+            `;
+        });
 
         if (mainBarChart) {
             mainBarChart.innerHTML = `
                 <div style="display: flex; justify-content: flex-end; gap: 15px; font-size: 11px; margin-bottom: 8px;">
                     <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #107c41; display: inline-block; border: 1px solid #000;"></span> Earnings (£)</span>
+                    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #0078d4; display: inline-block; border: 1px solid #000;"></span> Delivery Count</span>
                     <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #d83b01; display: inline-block; border: 1px solid #000;"></span> Expenses (£)</span>
                 </div>
                 <svg viewBox="0 0 400 200" style="width: 100%; height: auto; background: var(--input-bg); border-radius: 6px;">
@@ -377,51 +430,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     <line x1="40" y1="60" x2="380" y2="60" stroke="#ccc" stroke-dasharray="3,3" />
                     <line x1="40" y1="100" x2="380" y2="100" stroke="#ccc" stroke-dasharray="3,3" />
                     <line x1="40" y1="140" x2="380" y2="140" stroke="#ccc" stroke-dasharray="3,3" />
-
                     <line x1="40" y1="160" x2="390" y2="160" stroke="#000" stroke-width="2" />
                     <line x1="40" y1="10" x2="40" y2="160" stroke="#000" stroke-width="2" />
-
-                    <rect x="65" y="${160 - uEarnH}" width="22" height="${uEarnH}" fill="#107c41" stroke="#000" stroke-width="1.5" />
-                    <rect x="90" y="${160 - uExpH}" width="22" height="${uExpH}" fill="#d83b01" stroke="#000" stroke-width="1.5" />
-                    <text x="88" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">Uber</text>
-
-                    <rect x="175" y="${160 - jEarnH}" width="22" height="${jEarnH}" fill="#107c41" stroke="#000" stroke-width="1.5" />
-                    <rect x="200" y="${160 - jExpH}" width="22" height="${jExpH}" fill="#d83b01" stroke="#000" stroke-width="1.5" />
-                    <text x="198" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">Just Eat</text>
-
-                    <rect x="285" y="${160 - aEarnH}" width="22" height="${aEarnH}" fill="#107c41" stroke="#000" stroke-width="1.5" />
-                    <rect x="310" y="${160 - aExpH}" width="22" height="${aExpH}" fill="#d83b01" stroke="#000" stroke-width="1.5" />
-                    <text x="308" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">Amazon</text>
+                    ${barsSvg}
                 </svg>
             `;
         }
 
-        if (sideContainers) {
-            sideContainers.innerHTML = `
-                <div class="side-card">
-                    <div class="side-card-title">Uber</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Count: ${stats.uber.count}</div>
-                    <div class="side-card-val">£${stats.uber.earned.toFixed(2)}</div>
-                </div>
-                <div class="side-card">
-                    <div class="side-card-title">Just Eat</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Count: ${stats.justeat.count}</div>
-                    <div class="side-card-val">£${stats.justeat.earned.toFixed(2)}</div>
-                </div>
-                <div class="side-card">
-                    <div class="side-card-title">Amazon</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Count: ${stats.amazon.count}</div>
-                    <div class="side-card-val">£${stats.amazon.earned.toFixed(2)}</div>
-                </div>
-            `;
-        }
+        if (sideContainers) sideContainers.innerHTML = sideCardsHtml;
 
         renderTimeSeriesGraph(txs, fromVal, toVal, ['uber', 'justeat', 'amazon'], 'deliveries');
     }
 
     function renderTimeSeriesGraph(txs, fromVal, toVal, platforms, metricType) {
         if (timeChartTitle) {
-            timeChartTitle.textContent = currentMode === 'trading' ? 'Weekly Sales Breakdown by Platform' : 'Weekly Delivery Count & Earnings';
+            timeChartTitle.textContent = currentMode === 'trading' ? 'Sales Performance Breakdown' : 'Weekly Delivery Performance';
         }
 
         let spanMonths = 1;
@@ -432,22 +455,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let groupingRule = 'daily';
-        if (spanMonths > 12 || (spanMonths >= 12 && !fromVal)) {
+        if (spanMonths >= 12) {
             groupingRule = 'monthly';
         } else if (spanMonths > 2) {
             groupingRule = '15days';
+        } else {
+            groupingRule = 'daily';
         }
 
         if (timeGroupingLabel) {
-            timeGroupingLabel.textContent = `Interval Grouping: ${groupingRule === 'daily' ? 'Daily / Weekly' : groupingRule === '15days' ? '15-Day Intervals' : 'Monthly'}`;
+            timeGroupingLabel.textContent = `Interval Grouping: ${groupingRule === 'daily' ? 'Daily' : groupingRule === '15days' ? '15-Day Intervals' : 'Monthly'}`;
         }
 
         let groupedData = {};
 
+        // 1. Build complete continuous key range if daily
+        let startDate = new Date(fromVal ? fromVal + '-01' : new Date().setDate(1));
+        let endDate = new Date(toVal ? toVal + '-31' : new Date());
+        
+        // If specific transactions exist, expand bounds to fit actual data span if needed
+        txs.forEach(tx => {
+            if (!tx.date) return;
+            const d = new Date(tx.date);
+            if (!isNaN(d)) {
+                if (d < startDate) startDate = new Date(d);
+                if (d > endDate) endDate = new Date(d);
+            }
+        });
+
+        if (groupingRule === 'daily') {
+            let curr = new Date(startDate);
+            // Fallback if range is too wide or default to txs bounds
+            if (fromVal) curr = new Date(fromVal + '-01');
+            let lastDay = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
+            if (toVal) {
+                const [tY, tM] = toVal.split('-').map(Number);
+                lastDay = new Date(tY, tM, 0);
+            }
+
+            while (curr <= lastDay) {
+                const k = curr.toISOString().split('T')[0];
+                groupedData[k] = { [platforms[0]]: 0, [platforms[1]]: 0, [platforms[2]]: 0 };
+                curr.setDate(curr.getDate() + 1);
+            }
+        }
+
+        // 2. Populate transaction values into buckets
         txs.forEach(tx => {
             if (!tx.date) return;
             const dateObj = new Date(tx.date);
             if (isNaN(dateObj)) return;
+
+            const flow = String(tx.flow || '').toLowerCase();
+            if (!flow.includes('in')) return;
 
             let key = '';
             if (groupingRule === 'monthly') {
@@ -472,8 +532,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const amt = Math.abs(parseFloat(String(tx.amount || '').replace('£', '').replace(',', '')) || 0);
 
             let matchedPlatform = platforms[0];
-            if (cat.includes(platforms[1]) || cat.includes('ebay') || cat.includes('justeat') || cat.includes('just eat')) matchedPlatform = platforms[1];
-            else if (cat.includes(platforms[2]) || cat.includes('facebook') || cat.includes('fb') || cat.includes('amazon')) matchedPlatform = platforms[2];
+            if (metricType === 'deliveries') {
+                if (cat.includes('just eat') || cat.includes('justeat')) matchedPlatform = platforms[1];
+                else if (cat.includes('amazon')) matchedPlatform = platforms[2];
+                else matchedPlatform = platforms[0];
+            } else {
+                if (cat.includes('ebay')) matchedPlatform = platforms[1];
+                else if (cat.includes('facebook') || cat.includes('fb')) matchedPlatform = platforms[2];
+                else matchedPlatform = platforms[0];
+            }
 
             groupedData[key][matchedPlatform] += amt;
         });
