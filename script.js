@@ -134,15 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Set Date in DD/MM/YYYY Format
+    // Set Date using standard HTML date picker format (YYYY-MM-DD)
     const dateInput = document.getElementById('Date');
-    if (dateInput) {
-        const today = new Date();
-        const day = String(today.getDate()).padStart(2, '0');
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const year = today.getFullYear();
-        dateInput.value = `${day}/${month}/${year}`;
-    }
+    if (dateInput) dateInput.valueAsDate = new Date();
 
     let computedFlow = '';
     let finalPlatformOrType = '';
@@ -291,8 +285,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const dateEl = document.getElementById('Date');
             const noteEl = document.getElementById('Note');
 
+            // Format Review Modal date nicely as dd mmm yyyy (e.g. 24 Jul 2026)
             if (sumDate && dateEl && dateEl.value) {
-                sumDate.innerText = dateEl.value;
+                const d = new Date(dateEl.value);
+                if (!isNaN(d.getTime())) {
+                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                    sumDate.innerText = d.toLocaleDateString('en-GB', options).replace(/,/g, '');
+                } else {
+                    sumDate.innerText = dateEl.value;
+                }
             }
 
             if (sumCategory) sumCategory.innerText = finalPlatformOrType;
@@ -375,13 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (trackerForm) trackerForm.reset();
                     const dateEl = document.getElementById('Date');
-                    if (dateEl) {
-                        const today = new Date();
-                        const day = String(today.getDate()).padStart(2, '0');
-                        const month = String(today.getMonth() + 1).padStart(2, '0');
-                        const year = today.getFullYear();
-                        dateEl.value = `${day}/${month}/${year}`;
-                    }
+                    if (dateEl) dateEl.valueAsDate = new Date();
                     if (mainCategory) mainCategory.value = '';
                     hideNextSteps();
                     if (deliveryGroup) deliveryGroup.classList.add('hidden');
