@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileImg = document.getElementById('profileImg');
     const profileInitials = document.getElementById('profileInitials');
     const printProfileImg = document.getElementById('printProfileImg');
-    const connectSheetsBtn = document.getElementById('connectSheetsBtn');
 
     const goHomeBtn = document.getElementById('goHomeBtn') || document.getElementById('goToHome');
     const goStatsBtn = document.getElementById('goStatsBtn') || document.getElementById('goToStats');
@@ -101,8 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-       // ==========================================
+    // ==========================================
 
     // Form Elements & Logic
     const trackerForm = document.getElementById('trackerForm');
@@ -136,8 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Set Date in DD/MM/YYYY Format
     const dateInput = document.getElementById('Date');
-    if (dateInput) dateInput.valueAsDate = new Date();
+    if (dateInput) {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const year = today.getFullYear();
+        dateInput.value = `${day}/${month}/${year}`;
+    }
 
     let computedFlow = '';
     let finalPlatformOrType = '';
@@ -287,13 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const noteEl = document.getElementById('Note');
 
             if (sumDate && dateEl && dateEl.value) {
-                const d = new Date(dateEl.value);
-                if (!isNaN(d.getTime())) {
-                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
-                    sumDate.innerText = d.toLocaleDateString('en-GB', options).replace(/,/g, '');
-                } else {
-                    sumDate.innerText = dateEl.value;
-                }
+                sumDate.innerText = dateEl.value;
             }
 
             if (sumCategory) sumCategory.innerText = finalPlatformOrType;
@@ -376,7 +375,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (trackerForm) trackerForm.reset();
                     const dateEl = document.getElementById('Date');
-                    if (dateEl) dateEl.valueAsDate = new Date();
+                    if (dateEl) {
+                        const today = new Date();
+                        const day = String(today.getDate()).padStart(2, '0');
+                        const month = String(today.getMonth() + 1).padStart(2, '0');
+                        const year = today.getFullYear();
+                        dateEl.value = `${day}/${month}/${year}`;
+                    }
                     if (mainCategory) mainCategory.value = '';
                     hideNextSteps();
                     if (deliveryGroup) deliveryGroup.classList.add('hidden');
