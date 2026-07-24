@@ -102,21 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (connectSheetsBtn) {
-        connectSheetsBtn.addEventListener('click', () => {
-            const currentUrl = localStorage.getItem('googleSheetsUrl') || '';
-            const userUrl = prompt("Paste your Google Apps Script Web App URL here:", currentUrl);
-            
-            if (userUrl !== null && userUrl.trim() !== "") {
-                localStorage.setItem('googleSheetsUrl', userUrl.trim());
-                alert("Google Sheets connection saved!");
-            } else if (userUrl !== null && userUrl.trim() === "") {
-                localStorage.removeItem('googleSheetsUrl');
-                alert("Connection URL cleared.");
-            }
-        });
-    }
-    // ==========================================
+       // ==========================================
 
     // Form Elements & Logic
     const trackerForm = document.getElementById('trackerForm');
@@ -140,6 +126,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const reviewModal = document.getElementById('reviewModal');
     const editBtn = document.getElementById('editBtn');
     const saveBtn = document.getElementById('saveBtn');
+
+    // Success Modal Elements
+    const successOkBtn = document.getElementById('successOkBtn');
+    const successModal = document.getElementById('successModal');
+    if (successOkBtn && successModal) {
+        successOkBtn.addEventListener('click', () => {
+            successModal.style.display = 'none';
+        });
+    }
 
     const dateInput = document.getElementById('Date');
     if (dateInput) dateInput.valueAsDate = new Date();
@@ -291,7 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const dateEl = document.getElementById('Date');
             const noteEl = document.getElementById('Note');
 
-            if (sumDate && dateEl) sumDate.innerText = dateEl.value;
+            if (sumDate && dateEl && dateEl.value) {
+                const d = new Date(dateEl.value);
+                if (!isNaN(d.getTime())) {
+                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                    sumDate.innerText = d.toLocaleDateString('en-GB', options).replace(/,/g, '');
+                } else {
+                    sumDate.innerText = dateEl.value;
+                }
+            }
+
             if (sumCategory) sumCategory.innerText = finalPlatformOrType;
             if (sumFlow) sumFlow.innerText = computedFlow;
             if (sumAmount) sumAmount.innerText = '£' + adjustedAmount.toFixed(2);
@@ -357,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 note: (sumNote && sumNote.innerText !== 'None') ? sumNote.innerText : ''
             };
 
-            fetch(sheetUrl, {
+           fetch(sheetUrl, {
                 method: 'POST',
                 mode: 'cors',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -366,9 +370,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if (data.result === 'success') {
-                    alert('Saved to Google Sheets successfully!');
                     if (reviewModal) reviewModal.style.display = 'none';
                     
+                    if (successModal) successModal.style.display = 'flex';
+
                     if (trackerForm) trackerForm.reset();
                     const dateEl = document.getElementById('Date');
                     if (dateEl) dateEl.valueAsDate = new Date();

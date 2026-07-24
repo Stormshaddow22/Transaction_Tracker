@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <div class="setting-item">
-                <span id="goDashBtn" style="cursor: pointer; color: var(--primary-color); font-weight: bold">Analytics</span>
+                <span id="goDashBtn" style="cursor: pointer; color: var(--primary-color); font-weight: bold">Analytics Dashboard</span>
             </div>
 
             <div class="setting-item">

@@ -201,6 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Sort transactions in descending order (newest to oldest)
+        transactions.sort((a, b) => {
+            const dateA = new Date(a.date || '');
+            const dateB = new Date(b.date || '');
+            return dateB - dateA;
+        });
+
         let deliveryEarnings = 0;
         let deliveryExpense = 0;
         let tradingEarnings = 0;
@@ -211,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <thead>
                     <tr style="border-bottom: 2px solid var(--input-border); text-align: left; color: var(--label-color);">
                         <th style="padding: 8px;">Date</th>
-                        <th style="padding: 8px;">Category / Platform</th>
+                        <th style="padding: 8px;">Description</th>
                         <th style="padding: 8px;">Flow</th>
                         <th style="padding: 8px; text-align: right;">Amount</th>
                     </tr>
@@ -247,12 +254,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Format date nicely as dd mmm yyyy (e.g. 23 July 2026)
+            let formattedDate = tx.date ? tx.date.split('T')[0] : '';
+            if (formattedDate) {
+                const d = new Date(formattedDate);
+                if (!isNaN(d.getTime())) {
+                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                    formattedDate = d.toLocaleDateString('en-GB', options).replace(/,/g, '');
+                }
+            }
+
+            // Ensure correct currency alignment: minus sign first, then £ (e.g., -£8.24)
+            let rawAmtStr = String(tx.amount || '').trim().replace('£', '');
+            let formattedAmount = '';
+            if (flowVal.includes('out') || rawAmtStr.startsWith('-')) {
+                const positiveVal = Math.abs(cleanAmount).toFixed(2);
+                formattedAmount = `-£${positiveVal}`;
+            } else {
+                formattedAmount = `£${cleanAmount.toFixed(2)}`;
+            }
+
             html += `
                 <tr style="border-bottom: 1px solid var(--input-border);">
-                    <td style="padding: 8px;">${tx.date ? tx.date.split('T')[0] : ''}</td>
+                    <td style="padding: 8px;">${formattedDate}</td>
                     <td style="padding: 8px;">${tx.category || ''}</td>
                     <td style="padding: 8px; color: ${flowVal.includes('out') ? '#d83b01' : '#107c41'}; font-weight: bold;">${tx.flow || ''}</td>
-                    <td style="padding: 8px; text-align: right; font-weight: bold;">${tx.amount || ''}</td>
+                    <td style="padding: 8px; text-align: right; font-weight: bold;">${formattedAmount}</td>
                 </tr>
             `;
         });

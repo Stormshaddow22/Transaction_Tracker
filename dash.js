@@ -233,24 +233,29 @@ document.addEventListener('DOMContentLoaded', () => {
         let stats = {
             vinted: { name: 'Vinted', count: 0, value: 0 },
             ebay: { name: 'eBay', count: 0, value: 0 },
-            facebook: { name: 'Facebook', count: 0, value: 0 }
+            facebook: { name: 'Facebook', count: 0, value: 0 },
+            expense: { name: 'Expense', count: 0, expense: 0 }
         };
 
         txs.forEach(tx => {
-            const cat = String(tx.category || '').toLowerCase();
+            const cat = String(tx.category || tx.type || '').toLowerCase();
             const flow = String(tx.flow || '').toLowerCase();
             const amt = Math.abs(parseFloat(String(tx.amount || '').replace('£', '').replace(',', '')) || 0);
+
+            // Filter out deliveries
+            if (cat.includes('delivery') || cat.includes('uber') || cat.includes('just eat') || cat.includes('amazon')) return;
 
             if (flow.includes('in') && (cat.includes('trading') || cat.includes('sale') || cat.includes('vinted') || cat.includes('ebay') || cat.includes('facebook'))) {
                 if (cat.includes('ebay')) { stats.ebay.count++; stats.ebay.value += amt; }
                 else if (cat.includes('facebook') || cat.includes('fb')) { stats.facebook.count++; stats.facebook.value += amt; }
-                else {
-                    stats.vinted.count++; stats.vinted.value += amt;
-                }
+                else { stats.vinted.count++; stats.vinted.value += amt; }
+            } else if (flow.includes('out') && (cat.includes('stock purchase') || cat.includes('expense') || cat.includes('trading'))) {
+                stats.expense.expense += amt;
+                stats.expense.count++;
             }
         });
 
-        const activeItems = Object.keys(stats).filter(key => stats[key].count > 0 || stats[key].value > 0);
+        const activeItems = Object.keys(stats).filter(key => stats[key].count > 0 || stats[key].value > 0 || stats[key].expense > 0);
 
         if (activeItems.length === 0) {
             if (dashPlaceholder) {
@@ -261,17 +266,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const totalCount = activeItems.reduce((sum, k) => sum + stats[k].count, 0);
-        const totalValue = activeItems.reduce((sum, k) => sum + stats[k].value, 0);
+        const totalCount = ['vinted', 'ebay', 'facebook'].reduce((sum, k) => sum + stats[k].count, 0);
+        const totalValue = ['vinted', 'ebay', 'facebook'].reduce((sum, k) => sum + stats[k].value, 0);
+        const totalExpense = stats.expense.expense;
+        const totalProfit = totalValue - totalExpense;
 
         if (mainChartTitle) {
             mainChartTitle.innerHTML = `
                 Trading Sales Value & Count<br>
-                <span style="font-size: 11px; font-weight: normal; color: var(--label-color);">Total Items Sold: <strong>${totalCount}</strong> | Total Sales Value: <strong style="color: #107c41;">£${totalValue.toFixed(2)}</strong></span>
+                <span style="font-size: 11px; font-weight: normal; color: var(--label-color);">
+                    Total Items Sold: <strong>${totalCount}</strong> | 
+                    Sales Value: <strong style="color: #107c41;">£${totalValue.toFixed(2)}</strong> | 
+                    Total Profit: <strong style="color: ${totalProfit >= 0 ? '#107c41' : '#d83b01'};">£${totalProfit.toFixed(2)}</strong>
+                </span>
             `;
         }
 
-        const maxVal = Math.max(...activeItems.map(k => Math.max(stats[k].value, stats[k].count)), 1);
+        const maxVal = Math.max(...activeItems.map(k => {
+            if (k === 'expense') return stats[k].expense;
+            return Math.max(stats[k].value, stats[k].count);
+        }), 1);
+
         const slotWidth = 340 / activeItems.length;
 
         let barsSvg = '';
@@ -280,33 +295,56 @@ document.addEventListener('DOMContentLoaded', () => {
         activeItems.forEach((key, index) => {
             const item = stats[key];
             const slotCenter = 40 + (index * slotWidth) + (slotWidth / 2);
-            const valH = (item.value / maxVal) * 130;
-            const cntH = (item.count / maxVal) * 130;
-            const xVal = slotCenter - 23;
-            const xCnt = slotCenter + 1;
 
-            barsSvg += `
-                <rect x="${xVal}" y="${160 - valH}" width="22" height="${valH}" fill="#f7931e" stroke="#000" stroke-width="1.5" />
-                ${item.value > 0 ? `<text x="${xVal + 11}" y="${Math.max(18, 160 - valH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${item.value.toFixed(0)}</text>` : ''}
-                <rect x="${xCnt}" y="${160 - cntH}" width="22" height="${cntH}" fill="#8b5cf6" stroke="#000" stroke-width="1.5" />
-                ${item.count > 0 ? `<text x="${xCnt + 11}" y="${Math.max(18, 160 - cntH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.count}</text>` : ''}
-                <text x="${slotCenter}" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.name}</text>
-            `;
+            if (key === 'expense') {
+                const barH = (item.expense / maxVal) * 130;
+                const xPos = slotCenter - 11;
+                barsSvg += `
+                    ${item.expense > 0 ? `
+                        <rect x="${xPos}" y="${160 - barH}" width="22" height="${barH}" fill="#d83b01" stroke="#000" stroke-width="1.5" />
+                        <text x="${xPos + 11}" y="${Math.max(18, 160 - barH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${item.expense.toFixed(0)}</text>
+                    ` : ''}
+                    <text x="${slotCenter}" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">Expense</text>
+                `;
+            } else {
+                const valH = (item.value / maxVal) * 130;
+                const cntH = (item.count / maxVal) * 130;
+                const xVal = slotCenter - 23;
+                const xCnt = slotCenter + 1;
+
+                barsSvg += `
+                    <rect x="${xVal}" y="${160 - valH}" width="22" height="${valH}" fill="#f7931e" stroke="#000" stroke-width="1.5" />
+                    ${item.value > 0 ? `<text x="${xVal + 11}" y="${Math.max(18, 160 - valH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">£${item.value.toFixed(0)}</text>` : ''}
+                    <rect x="${xCnt}" y="${160 - cntH}" width="22" height="${cntH}" fill="#8b5cf6" stroke="#000" stroke-width="1.5" />
+                    ${item.count > 0 ? `<text x="${xCnt + 11}" y="${Math.max(18, 160 - cntH - 4)}" font-size="8" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.count}</text>` : ''}
+                    <text x="${slotCenter}" y="175" font-size="10" text-anchor="middle" fill="var(--text-color)" font-weight="bold">${item.name}</text>
+                `;
+            }
 
             sideCardsHtml += `
                 <div class="side-card">
-                    <div class="side-card-title">${item.name}</div>
-                    <div style="font-size: 11px; color: var(--label-color);">Sold: ${item.count}</div>
-                    <div class="side-card-val">£${item.value.toFixed(2)}</div>
+                    <div class="side-card-title">${key === 'expense' ? 'Trading Expenses' : item.name}</div>
+                    <div style="font-size: 11px; color: var(--label-color);">${key === 'expense' ? 'Stock Outflows' : 'Sold: ' + item.count}</div>
+                    <div class="side-card-val" style="color: ${key === 'expense' ? '#d83b01' : 'inherit'};">£${key === 'expense' ? item.expense.toFixed(2) : item.value.toFixed(2)}</div>
                 </div>
             `;
         });
+
+        // Add the extra Total Profit Summary Box at the end
+        sideCardsHtml += `
+            <div class="side-card" style="border: 2px dashed #107c41;">
+                <div class="side-card-title" style="color: #107c41; font-weight: bold;">Total Profit</div>
+                <div style="font-size: 11px; color: var(--label-color);">Sales minus Expenses</div>
+                <div class="side-card-val" style="color: ${totalProfit >= 0 ? '#107c41' : '#d83b01'};">£${totalProfit.toFixed(2)}</div>
+            </div>
+        `;
 
         if (mainBarChart) {
             mainBarChart.innerHTML = `
                 <div style="display: flex; justify-content: flex-end; gap: 15px; font-size: 11px; margin-bottom: 8px;">
                     <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #f7931e; display: inline-block; border: 1px solid #000;"></span> Sales Value (£)</span>
                     <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #8b5cf6; display: inline-block; border: 1px solid #000;"></span> Items Sold</span>
+                    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #d83b01; display: inline-block; border: 1px solid #000;"></span> Expenses (£)</span>
                 </div>
                 <svg viewBox="0 0 400 200" style="width: 100%; height: auto; background: var(--input-bg); border-radius: 6px;">
                     <line x1="40" y1="20" x2="380" y2="20" stroke="#ccc" stroke-dasharray="3,3" />
@@ -336,9 +374,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         txs.forEach(tx => {
-            const cat = String(tx.category || '').toLowerCase();
+            const cat = String(tx.category || tx.type || '').toLowerCase();
             const flow = String(tx.flow || '').toLowerCase();
             const amt = Math.abs(parseFloat(String(tx.amount || '').replace('£', '').replace(',', '')) || 0);
+
+            // Only process delivery-related rows
+            if (!cat.includes('delivery') && !cat.includes('uber') && !cat.includes('just eat') && !cat.includes('justeat') && !cat.includes('amazon')) {
+                return;
+            }
 
             if (flow.includes('in')) {
                 if (cat.includes('just eat') || cat.includes('justeat')) {
@@ -469,11 +512,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let groupedData = {};
 
-        // 1. Build complete continuous key range if daily
         let startDate = new Date(fromVal ? fromVal + '-01' : new Date().setDate(1));
         let endDate = new Date(toVal ? toVal + '-31' : new Date());
         
-        // If specific transactions exist, expand bounds to fit actual data span if needed
         txs.forEach(tx => {
             if (!tx.date) return;
             const d = new Date(tx.date);
@@ -485,7 +526,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (groupingRule === 'daily') {
             let curr = new Date(startDate);
-            // Fallback if range is too wide or default to txs bounds
             if (fromVal) curr = new Date(fromVal + '-01');
             let lastDay = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
             if (toVal) {
@@ -500,7 +540,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 2. Populate transaction values into buckets
         txs.forEach(tx => {
             if (!tx.date) return;
             const dateObj = new Date(tx.date);
@@ -528,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
 
-            const cat = String(tx.category || '').toLowerCase();
+            const cat = String(tx.category || tx.type || '').toLowerCase();
             const amt = Math.abs(parseFloat(String(tx.amount || '').replace('£', '').replace(',', '')) || 0);
 
             let matchedPlatform = platforms[0];
